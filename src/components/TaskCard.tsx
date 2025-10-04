@@ -1,6 +1,7 @@
 import { Task } from '@/types/task';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Pencil, Trash2, Calendar, Tag, GripVertical } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
@@ -11,6 +12,7 @@ interface TaskCardProps {
   task: Task;
   onEdit: (task: Task) => void;
   onDelete: (id: string) => void;
+  onToggleComplete: (id: string) => void;
 }
 
 const categoryColors = {
@@ -20,7 +22,7 @@ const categoryColors = {
   ideas: 'bg-warning/10 text-warning border-warning/20',
 };
 
-export const TaskCard = ({ task, onEdit, onDelete }: TaskCardProps) => {
+export const TaskCard = ({ task, onEdit, onDelete, onToggleComplete }: TaskCardProps) => {
   const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'completed';
 
   const {
@@ -59,6 +61,11 @@ export const TaskCard = ({ task, onEdit, onDelete }: TaskCardProps) => {
         {/* Header with Drag Handle */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 flex-1">
+            <Checkbox
+              checked={task.status === 'completed'}
+              onCheckedChange={() => onToggleComplete(task.id)}
+              className="mt-0.5"
+            />
             <button
               className="touch-none cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors"
               {...attributes}
@@ -66,7 +73,9 @@ export const TaskCard = ({ task, onEdit, onDelete }: TaskCardProps) => {
             >
               <GripVertical className="h-4 w-4" />
             </button>
-            <h3 className="font-semibold text-foreground line-clamp-2 flex-1">
+            <h3 className={`font-semibold text-foreground line-clamp-2 flex-1 ${
+              task.status === 'completed' ? 'line-through opacity-60' : ''
+            }`}>
               {task.title}
             </h3>
           </div>
@@ -92,13 +101,15 @@ export const TaskCard = ({ task, onEdit, onDelete }: TaskCardProps) => {
 
         {/* Description */}
         {task.description && (
-          <p className="text-sm text-muted-foreground line-clamp-3 ml-6">
+          <p className={`text-sm text-muted-foreground line-clamp-3 ml-12 ${
+            task.status === 'completed' ? 'line-through opacity-60' : ''
+          }`}>
             {task.description}
           </p>
         )}
 
         {/* Metadata */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 ml-6">
+        <div className="flex flex-wrap items-center gap-2 pt-2 ml-12">
           {task.category && (
             <Badge variant="outline" className={categoryColors[task.category]}>
               <Tag className="h-3 w-3 mr-1" />

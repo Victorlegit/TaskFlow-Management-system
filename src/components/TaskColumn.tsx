@@ -10,6 +10,7 @@ interface TaskColumnProps {
   tasks: Task[];
   onEditTask: (task: Task) => void;
   onDeleteTask: (id: string) => void;
+  onToggleComplete: (id: string) => void;
 }
 
 const columnConfig = {
@@ -33,7 +34,7 @@ const columnConfig = {
   },
 };
 
-export const TaskColumn = ({ status, tasks, onEditTask, onDeleteTask }: TaskColumnProps) => {
+export const TaskColumn = ({ status, tasks, onEditTask, onDeleteTask, onToggleComplete }: TaskColumnProps) => {
   const config = columnConfig[status];
   const Icon = config.icon;
   const { setNodeRef, isOver } = useDroppable({
@@ -71,6 +72,7 @@ export const TaskColumn = ({ status, tasks, onEditTask, onDeleteTask }: TaskColu
               task={task}
               onEdit={onEditTask}
               onDelete={onDeleteTask}
+              onToggleComplete={onToggleComplete}
             />
           ))}
           

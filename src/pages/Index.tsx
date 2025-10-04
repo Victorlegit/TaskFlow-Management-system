@@ -88,6 +88,19 @@ const Index = () => {
     toast.success('Task deleted');
   };
 
+  const handleToggleComplete = (id: string) => {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+    
+    if (task.status === 'completed') {
+      updateTask(id, { status: 'todo' });
+      toast.success('Task marked as incomplete');
+    } else {
+      updateTask(id, { status: 'completed' });
+      toast.success('Task completed!');
+    }
+  };
+
   const activeTask = activeId ? tasks.find(t => t.id === activeId) : null;
 
   return (
@@ -141,18 +154,21 @@ const Index = () => {
               tasks={tasksByStatus.todo}
               onEditTask={handleEditTask}
               onDeleteTask={handleDeleteTask}
+              onToggleComplete={handleToggleComplete}
             />
             <TaskColumn
               status="inProgress"
               tasks={tasksByStatus.inProgress}
               onEditTask={handleEditTask}
               onDeleteTask={handleDeleteTask}
+              onToggleComplete={handleToggleComplete}
             />
             <TaskColumn
               status="completed"
               tasks={tasksByStatus.completed}
               onEditTask={handleEditTask}
               onDeleteTask={handleDeleteTask}
+              onToggleComplete={handleToggleComplete}
             />
           </div>
 
