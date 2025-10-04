@@ -1,0 +1,96 @@
+import { Task, TaskStatus } from '@/types/task';
+import { TaskCard } from './TaskCard';
+import { Droppable, Draggable } from '@hello-pangea/dnd';
+import { motion } from 'framer-motion';
+import { ListTodo, Clock, CheckCircle2 } from 'lucide-react';
+
+interface TaskColumnProps {
+  status: TaskStatus;
+  tasks: Task[];
+  onEditTask: (task: Task) => void;
+  onDeleteTask: (id: string) => void;
+}
+
+const columnConfig = {
+  todo: {
+    title: 'To Do',
+    icon: ListTodo,
+    color: 'text-muted-foreground',
+    bgColor: 'bg-muted/50',
+  },
+  inProgress: {
+    title: 'In Progress',
+    icon: Clock,
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
+  },
+  completed: {
+    title: 'Completed',
+    icon: CheckCircle2,
+    color: 'text-success',
+    bgColor: 'bg-success/10',
+  },
+};
+
+export const TaskColumn = ({ status, tasks, onEditTask, onDeleteTask }: TaskColumnProps) => {
+  const config = columnConfig[status];
+  const Icon = config.icon;
+
+  return (
+    <div className="flex flex-col h-full min-w-[320px]">
+      {/* Column Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={`flex items-center gap-2 mb-4 p-3 rounded-lg ${config.bgColor}`}
+      >
+        <Icon className={`h-5 w-5 ${config.color}`} />
+        <h2 className="font-semibold text-foreground">{config.title}</h2>
+        <span className="ml-auto text-sm font-medium text-muted-foreground bg-background/50 px-2 py-0.5 rounded-full">
+          {tasks.length}
+        </span>
+      </motion.div>
+
+      {/* Droppable Area */}
+      <Droppable droppableId={status}>
+        {(provided, snapshot) => (
+          <div
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+            className={`flex-1 space-y-3 p-3 rounded-lg border-2 border-dashed transition-colors min-h-[200px] ${
+              snapshot.isDraggingOver
+                ? 'border-primary bg-primary/5'
+                : 'border-border/50 bg-muted/20'
+            }`}
+          >
+            {tasks.map((task, index) => (
+              <Draggable key={task.id} draggableId={task.id} index={index}>
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    {...provided.dragHandleProps}
+                  >
+                    <TaskCard
+                      task={task}
+                      onEdit={onEditTask}
+                      onDelete={onDeleteTask}
+                      isDragging={snapshot.isDragging}
+                    />
+                  </div>
+                )}
+              </Draggable>
+            ))}
+            {provided.placeholder}
+            
+            {tasks.length === 0 && (
+              <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
+                No tasks yet
+              </div>
+            )}
+          </div>
+        )}
+      </Droppable>
+    </div>
+  );
+};
