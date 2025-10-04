@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTasks } from '@/hooks/useTasks';
 import { useTheme } from '@/hooks/useTheme';
 import { Task, TaskStatus } from '@/types/task';
-import { DragDropContext, DropResult } from '@hello-pangea/dnd';
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { TaskColumn } from '@/components/TaskColumn';
 import { TaskDialog } from '@/components/TaskDialog';
 import { StatsPanel } from '@/components/StatsPanel';
@@ -18,6 +18,15 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
 
   // Filter tasks based on search
   const filteredTasks = tasks.filter((task) =>
@@ -31,20 +40,27 @@ const Index = () => {
     completed: filteredTasks.filter((t) => t.status === 'completed'),
   };
 
-  const handleDragEnd = (result: DropResult) => {
-    const { destination, source, draggableId } = result;
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
 
-    // Dropped outside a valid droppable
-    if (!destination) return;
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
 
-    // Dropped in the same position
-    if (destination.droppableId === source.droppableId && destination.index === source.index) {
-      return;
+    if (!over) return;
+
+    const taskId = active.id as string;
+    const newStatus = over.id as TaskStatus;
+
+    // Check if it's a valid status column
+    if (['todo', 'inProgress', 'completed'].includes(newStatus)) {
+      const task = tasks.find(t => t.id === taskId);
+      if (task && task.status !== newStatus) {
+        moveTask(taskId, newStatus);
+        toast.success('Task moved successfully');
+      }
     }
-
-    // Move task to new status
-    moveTask(draggableId, destination.droppableId as TaskStatus);
-    toast.success('Task moved successfully');
   };
 
   const handleAddTask = () => {
@@ -71,6 +87,8 @@ const Index = () => {
     deleteTask(id);
     toast.success('Task deleted');
   };
+
+  const activeTask = activeId ? tasks.find(t => t.id === activeId) : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -112,7 +130,11 @@ const Index = () => {
         <SearchBar value={searchQuery} onChange={setSearchQuery} />
 
         {/* Kanban Board */}
-        <DragDropContext onDragEnd={handleDragEnd}>
+        <DndContext
+          sensors={sensors}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <TaskColumn
               status="todo"
@@ -133,7 +155,17 @@ const Index = () => {
               onDeleteTask={handleDeleteTask}
             />
           </div>
-        </DragDropContext>
+
+          <DragOverlay>
+            {activeTask ? (
+              <div className="rotate-3 scale-105">
+                <div className="bg-card rounded-lg p-4 shadow-2xl border border-border/50 backdrop-blur-sm opacity-80">
+                  <h3 className="font-semibold text-foreground">{activeTask.title}</h3>
+                </div>
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       </main>
 
       {/* Task Dialog */}

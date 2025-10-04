@@ -1,15 +1,16 @@
 import { Task } from '@/types/task';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Pencil, Trash2, Calendar, Tag } from 'lucide-react';
+import { Pencil, Trash2, Calendar, Tag, GripVertical } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface TaskCardProps {
   task: Task;
   onEdit: (task: Task) => void;
   onDelete: (id: string) => void;
-  isDragging?: boolean;
 }
 
 const categoryColors = {
@@ -19,30 +20,56 @@ const categoryColors = {
   ideas: 'bg-warning/10 text-warning border-warning/20',
 };
 
-export const TaskCard = ({ task, onEdit, onDelete, isDragging }: TaskCardProps) => {
+export const TaskCard = ({ task, onEdit, onDelete }: TaskCardProps) => {
   const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'completed';
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
 
   return (
     <motion.div
+      ref={setNodeRef}
+      style={style}
       layout
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9 }}
       whileHover={{ scale: isDragging ? 1 : 1.02 }}
       transition={{ duration: 0.2 }}
-      className={`group relative bg-card rounded-lg p-4 shadow-md hover:shadow-lg border border-border/50 backdrop-blur-sm transition-all ${
-        isDragging ? 'opacity-50 cursor-grabbing' : 'cursor-grab'
+      className={`group relative bg-card rounded-lg p-4 shadow-md hover:shadow-lg border border-border/50 backdrop-blur-sm ${
+        isDragging ? 'cursor-grabbing z-50' : 'cursor-grab'
       }`}
     >
       {/* Glow effect on hover */}
       <div className="absolute inset-0 rounded-lg bg-gradient-primary opacity-0 group-hover:opacity-5 transition-opacity" />
       
       <div className="relative space-y-3">
-        {/* Header */}
+        {/* Header with Drag Handle */}
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold text-foreground line-clamp-2 flex-1">
-            {task.title}
-          </h3>
+          <div className="flex items-center gap-2 flex-1">
+            <button
+              className="touch-none cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors"
+              {...attributes}
+              {...listeners}
+            >
+              <GripVertical className="h-4 w-4" />
+            </button>
+            <h3 className="font-semibold text-foreground line-clamp-2 flex-1">
+              {task.title}
+            </h3>
+          </div>
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <Button
               variant="ghost"
@@ -65,13 +92,13 @@ export const TaskCard = ({ task, onEdit, onDelete, isDragging }: TaskCardProps) 
 
         {/* Description */}
         {task.description && (
-          <p className="text-sm text-muted-foreground line-clamp-3">
+          <p className="text-sm text-muted-foreground line-clamp-3 ml-6">
             {task.description}
           </p>
         )}
 
         {/* Metadata */}
-        <div className="flex flex-wrap items-center gap-2 pt-2">
+        <div className="flex flex-wrap items-center gap-2 pt-2 ml-6">
           {task.category && (
             <Badge variant="outline" className={categoryColors[task.category]}>
               <Tag className="h-3 w-3 mr-1" />

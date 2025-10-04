@@ -1,6 +1,7 @@
 import { Task, TaskStatus } from '@/types/task';
 import { TaskCard } from './TaskCard';
-import { Droppable, Draggable } from '@hello-pangea/dnd';
+import { useDroppable } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { motion } from 'framer-motion';
 import { ListTodo, Clock, CheckCircle2 } from 'lucide-react';
 
@@ -35,6 +36,9 @@ const columnConfig = {
 export const TaskColumn = ({ status, tasks, onEditTask, onDeleteTask }: TaskColumnProps) => {
   const config = columnConfig[status];
   const Icon = config.icon;
+  const { setNodeRef, isOver } = useDroppable({
+    id: status,
+  });
 
   return (
     <div className="flex flex-col h-full min-w-[320px]">
@@ -52,45 +56,31 @@ export const TaskColumn = ({ status, tasks, onEditTask, onDeleteTask }: TaskColu
       </motion.div>
 
       {/* Droppable Area */}
-      <Droppable droppableId={status}>
-        {(provided, snapshot) => (
-          <div
-            ref={provided.innerRef}
-            {...provided.droppableProps}
-            className={`flex-1 space-y-3 p-3 rounded-lg border-2 border-dashed transition-colors min-h-[200px] ${
-              snapshot.isDraggingOver
-                ? 'border-primary bg-primary/5'
-                : 'border-border/50 bg-muted/20'
-            }`}
-          >
-            {tasks.map((task, index) => (
-              <Draggable key={task.id} draggableId={task.id} index={index}>
-                {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    {...provided.dragHandleProps}
-                  >
-                    <TaskCard
-                      task={task}
-                      onEdit={onEditTask}
-                      onDelete={onDeleteTask}
-                      isDragging={snapshot.isDragging}
-                    />
-                  </div>
-                )}
-              </Draggable>
-            ))}
-            {provided.placeholder}
-            
-            {tasks.length === 0 && (
-              <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
-                No tasks yet
-              </div>
-            )}
-          </div>
-        )}
-      </Droppable>
+      <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+        <div
+          ref={setNodeRef}
+          className={`flex-1 space-y-3 p-3 rounded-lg border-2 border-dashed transition-colors min-h-[200px] ${
+            isOver
+              ? 'border-primary bg-primary/5'
+              : 'border-border/50 bg-muted/20'
+          }`}
+        >
+          {tasks.map((task) => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              onEdit={onEditTask}
+              onDelete={onDeleteTask}
+            />
+          ))}
+          
+          {tasks.length === 0 && (
+            <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
+              No tasks yet
+            </div>
+          )}
+        </div>
+      </SortableContext>
     </div>
   );
 };
